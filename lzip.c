@@ -26,7 +26,7 @@ SOFTWARE.
 #include <lualib.h>
 #include <lauxlib.h>
 #include <zip.h>
-#include "printstack.h"
+
 
 // Some more constants
 #define ZIP_MINIMUM_COMPRESSION_LEVEL 0
