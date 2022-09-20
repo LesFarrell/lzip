@@ -21,12 +21,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-#include <windows.h>
 #include <lua.h>
 #include <lualib.h>
 #include <lauxlib.h>
 #include <zip.h>
-
 
 // Some more constants
 #define ZIP_MINIMUM_COMPRESSION_LEVEL 0
@@ -180,8 +178,7 @@ int lzip_entry_open(lua_State *L)
 int lzip_entry_opencasesensitive(lua_State *L)
 {
 	const char *entryname;
-
-	lua_printstack(L, "lzip_entry_opencasesensitive");
+	
 	lzip_data *self = check_lzip(L, 1);
 
 	entryname = luaL_checkstring(L, 2);
