@@ -1,2 +1,2 @@
 # lzip
-Lua bindings for https://github.com/kuba--/zip
+Lua binding for https://github.com/kuba--/zip
