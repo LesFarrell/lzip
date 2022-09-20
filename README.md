@@ -41,7 +41,7 @@ zip:entry_close();
 zip:close()
 ```
 
-List the contents of a zip file
+List the contents of a zip archive.
 
 ```lua
 archive = require("lzip")
@@ -61,4 +61,17 @@ end
 zip:close();
 ```
 
+Extract a file from a archive.
+
+```lua
+archive = require("lzip")
+
+zip = archive.open("example_one.zip", 0, "r")
+
+zip:entry_open("File_One.txt");
+zip:entry_fread("./extracted.txt");
+zip:entry_close();
+
+zip:close();
+```
 
