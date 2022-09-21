@@ -27,12 +27,12 @@ SOFTWARE.
 #include <zip.h>
 
 
-// Some more constants
+// Define some constants for Lua
 #define ZIP_MINIMUM_COMPRESSION_LEVEL 0
 #define ZIP_MAXIMUM_COMPRESSION_LEVEL 9
 
 
-// Macro to allow us to export C Constants to Lua
+// Macro to allow us to export C Constants back to Lua
 #define lua_setConst(L, name) \
   {                           \
     lua_pushnumber(L, name);  \
@@ -44,7 +44,7 @@ SOFTWARE.
 
 /*
  * This is the data structure every instance will hold.
- * it contains a pointer to the zip_t data.
+ * It contains a pointer to the zip_t data structure.
  */
 struct lzip_data
 {
@@ -73,6 +73,9 @@ lzip_data *check_lzip(lua_State *L, int index)
 
 //------------------------------------------------------------------------------
 
+/*
+* Decode a zip error number and push the resulting error string onto the stack.
+*/
 int lzip_geterror(lua_State *L, int err)
 {
 	lua_pushstring(L, zip_strerror(err));
@@ -84,14 +87,16 @@ int lzip_geterror(lua_State *L, int err)
 /**
  * Opens zip archive with compression level using the given mode.
  *
- * @param zipname zip archive file name.
- * @param level compression level (0-9 are the standard zlib-style levels).
- * @param mode file access mode.
+ * Passed:
+ * zipname zip archive file name.
+ * level compression level (0-9 are the standard zlib-style levels).
+ * mode file access mode.
  *        - 'r': opens a file for reading/extracting (the file must exists).
  *        - 'w': creates an empty file for writing.
  *        - 'a': appends to an existing archive.
  *
- * @return the zip archive handler or NULL on error
+ * Returns:
+ * The zip archive handler or NULL on error
  */
 static int lzip_open(lua_State *L)
 {
@@ -99,9 +104,11 @@ static int lzip_open(lua_State *L)
 	int compressionlevel = ZIP_DEFAULT_COMPRESSION_LEVEL;
 	const char *mode = {'\0'};
 
+
 	if (lua_gettop(L) != 3)
 	{
-		luaL_error(L, "usage: zip_open( zipname, compressionlevel, mode)");
+		// Display the usage message.
+		luaL_error(L, "usage: open( zipname, compressionlevel, mode)");
 	}
 
 	zipname = luaL_checkstring(L, 1);
@@ -129,13 +136,15 @@ static int lzip_open(lua_State *L)
 	// Create the user data
 	lzip_data *self = (lzip_data *)lua_newuserdata(L, sizeof(lzip_data));
 
-	// Call zip_open
+	// Call zip_open function.
 	self->zip_t = zip_open(zipname, compressionlevel, mode[0]);
 	if (self->zip_t == NULL)
 	{
+		// Display a error.
 		luaL_error(L, "Unable to open archive.");
 	}
 
+	// Create the userdata.
 	luaL_getmetatable(L, "lzip.db");
 	lua_setmetatable(L, -2);
 
@@ -144,13 +153,18 @@ static int lzip_open(lua_State *L)
 
 //------------------------------------------------------------------------------
 
+/*
+ * Close the zip archive.
+ */
 static int lzip_close(lua_State *L)
 {
+	// Grab the userdata from Lua's stack
 	lzip_data *self = check_lzip(L, 1);
 
+	// Close the archive.
 	if (self->zip_t != NULL)
 	{
-	zip_close(self->zip_t);
+		zip_close(self->zip_t);
 	}
 
 	return 0;
@@ -158,58 +172,90 @@ static int lzip_close(lua_State *L)
 
 //------------------------------------------------------------------------------
 
+/*
+ * Is this a 64bit zip archive?
+ */
 int lzip_is64(lua_State *L)
 {
+	// Grab the userdata from Lua's stack
 	lzip_data *self = check_lzip(L, 1);
+	
+	// Push the result to Lua's stack.
 	lua_pushboolean(L, zip_is64(self->zip_t));
+	
 	return 1;
 }
 
 //------------------------------------------------------------------------------
 
+/*
+ *	Open a zip entry by name
+ */
 int lzip_entry_open(lua_State *L)
 {
 	const char *entryname;
-
+	
+	// Grab the userdata from Lua's stack
 	lzip_data *self = check_lzip(L, 1);
-
-	entryname = luaL_checkstring(L, 2);
+	
+	// Check for the name on the stack
+	entryname = luaL_checkstring(L, 2);	
+	
+	// Open the entry.
 	return zip_entry_open(self->zip_t, entryname);
 }
 
 //------------------------------------------------------------------------------
 
+/*
+ * Open a case sensitive archive entry.
+ */
 int lzip_entry_opencasesensitive(lua_State *L)
 {
 	const char *entryname;
 	
+	// Grab the userdata from Lua's stack.
 	lzip_data *self = check_lzip(L, 1);
-
-	entryname = luaL_checkstring(L, 2);
-	printf("entryname:%s", entryname);
-
+	
+	// Get the entries name from the stack.
+	entryname = luaL_checkstring(L, 2);	
+	
+	// Try to open the entry.
 	return zip_entry_opencasesensitive(self->zip_t, entryname);
 }
 
 //------------------------------------------------------------------------------
 
+/*
+ *	Open an archive entry by index. Indexes start at 0. 
+ */
 int lzip_entry_openbyindex(lua_State *L)
 {
 	long Index = 0;
+	
+	// Grab the userdata from Lua's stack
 	lzip_data *self = check_lzip(L, 1);
 
+	// Get the index from Lua's stack.
 	Index = (long)luaL_checknumber(L, 2);
 
+	// Try to open the entry.
 	return zip_entry_openbyindex(self->zip_t, Index);
 }
 
 //------------------------------------------------------------------------------
 
+/*
+ *	Places the name of the currently selected entry on the Lua stack.
+ */
 int lzip_entry_name(lua_State *L)
 {
 	const char *entryname;
+	
+	// Grab the userdata from Lua's stack
 	lzip_data *self = check_lzip(L, 1);
 
+	// Place the name of the current entry on the stack.
 	entryname = zip_entry_name(self->zip_t);
 	if (entryname != NULL)
 	{
@@ -224,60 +270,100 @@ int lzip_entry_name(lua_State *L)
 
 //------------------------------------------------------------------------------
 
+/*
+ *	Checks to see if the currently selected entry is a directory.
+ */
 int lzip_entry_isdir(lua_State *L)
 {
+	// Grab the userdata from Lua's stack
 	lzip_data *self = check_lzip(L, 1);
+	
+	// Push True or False onto the stack.
 	lua_pushboolean(L, zip_entry_isdir(self->zip_t));
 	return 1;
 }
 
 //------------------------------------------------------------------------------
 
+/*
+ *	Places the size of the currently selected entry on Lua's stack.
+ */
 int lzip_entry_size(lua_State *L)
 {
+	// Grab the userdata from Lua's stack
 	lzip_data *self = check_lzip(L, 1);
+	
+	// Push the entry size onto the stack.
 	lua_pushnumber(L, zip_entry_size(self->zip_t));
 	return 1;
 }
 
 //------------------------------------------------------------------------------
 
+/*
+ *	Places the uncompressed size of the currently selected entry on the Lua stack.
+ */
 int lzip_entry_uncomp_size(lua_State *L)
 {
+	// Grab the userdata from Lua's stack
 	lzip_data *self = check_lzip(L, 1);
+	
+	// Push the uncompressed size of the entry onto the stack.
 	lua_pushnumber(L, zip_entry_uncomp_size(self->zip_t));
 	return 1;
 }
 
 //------------------------------------------------------------------------------
 
+/*
+ *	Places the compressed size of the currently selected entry on the Lua stack.
+ */
 int lzip_entry_comp_size(lua_State *L)
 {
+	// Grab the userdata from Lua's stack
 	lzip_data *self = check_lzip(L, 1);
+	
+	// Push the compressed size of the entry into the stack.
 	lua_pushnumber(L, zip_entry_comp_size(self->zip_t));
 	return 1;
 }
 
 //------------------------------------------------------------------------------
 
+/*
+ *	Places the CRC value of the currently selected entry on the Lua stack.
+ */
 int lzip_entry_crc32(lua_State *L)
 {
+	// Grab the userdata from Lua's stack
 	lzip_data *self = check_lzip(L, 1);
+	
+	// Push the CRC of the entry onto the stack.
 	lua_pushnumber(L, zip_entry_crc32(self->zip_t));
 	return 1;
 }
 
 //------------------------------------------------------------------------------
 
+/*
+ * Write data into the currently selected entry.
+ */
 int lzip_entry_write(lua_State *L)
 {
 	const void *buf = NULL;
 	size_t size = 0;
 	int result = 0;
 
+	// Grab the userdata from Lua's stack
 	lzip_data *self = check_lzip(L, 1);
+	
+	// Get the data from the stack.
 	buf = luaL_checkstring(L, 2);
+	
+	// Get the size of the data from the stack.
 	size = luaL_checknumber(L, 3);
+	
+	// Write the data into the currently selected entry.
 	result = zip_entry_write(self->zip_t, buf, size);
 	lzip_geterror(L, result);
 	return 1;
@@ -285,10 +371,17 @@ int lzip_entry_write(lua_State *L)
 
 //------------------------------------------------------------------------------
 
+/*
+ *	Write the contents of a file into the currently selected entry.
+ */
 int lzip_entry_fwrite(lua_State *L)
 {
 	int result = 0;
+	
+	// Grab the userdata from Lua's stack
 	lzip_data *self = check_lzip(L, 1);
+	
+	// Read the file and write it's data into the current entry.
 	result = zip_entry_fwrite(self->zip_t, luaL_checkstring(L, 2));
 	lzip_geterror(L, result);
 	return 1;
@@ -296,10 +389,17 @@ int lzip_entry_fwrite(lua_State *L)
 
 //------------------------------------------------------------------------------
 
+/*
+ *	Write the contents of the currently selected entry to file.
+ */
 int lzip_entry_fread(lua_State *L)
 {
 	int result = 0;
+	
+	// Grab the userdata from Lua's stack
 	lzip_data *self = check_lzip(L, 1);
+	
+	// Read the current entry and write the data to file.
 	result = zip_entry_fread(self->zip_t, luaL_checkstring(L, 2));
 	lzip_geterror(L, result);
 	return 1;
@@ -307,10 +407,17 @@ int lzip_entry_fread(lua_State *L)
 
 //------------------------------------------------------------------------------
 
+/*
+ *	Close the current entry in the archive.
+ */
 int lzip_entry_close(lua_State *L)
 {
 	int result = 0;
+	
+	// Grab the userdata from Lua's stack
 	lzip_data *self = check_lzip(L, 1);
+	
+	// Close the current archive entry.
 	result = zip_entry_close(self->zip_t);
 	lzip_geterror(L, result);
 	return 1;
@@ -318,55 +425,75 @@ int lzip_entry_close(lua_State *L)
 
 //------------------------------------------------------------------------------
 
+/*
+ *	Places the index of the current entry in the archive on the Lua stack.
+ */
 int lzip_entry_index(lua_State *L)
 {
 	int result = 0;
+	
+	// Grab the userdata from Lua's stack
 	lzip_data *self = check_lzip(L, 1);
+	
+	// Find the index of the current entry
 	result = zip_entry_index(self->zip_t);
-	lua_pushnumber(L, result);
-	// lzip_geterror(L, result);
+	
+	// Place the result on the stack.
+	lua_pushnumber(L, result);	
+	// lzip_geterror(L,result);
 	return 1;
 }
 
 //------------------------------------------------------------------------------
 
+/*
+ *	Places the total number of entries in the archive on the Lua stack
+ */
 static int lzip_entries_total(lua_State *L)
 {
+	// Grab the userdata from Lua's stack
 	lzip_data *self = check_lzip(L, 1);
+	
+	// Push the total number of entries into the stack.
 	lua_pushnumber(L, zip_entries_total(self->zip_t));
 	return 1;
 }
 
 //------------------------------------------------------------------------------
 
+/*
+ *	Simple wrapper function which takes a list of files in a lua table and compresses 
+ *  them into a zip archive.
+ */
 int lzipFiles(lua_State *L)
 {
-  // Initialize the Zip state.
+  // Initialize the zip state.
   struct zip_t *Zip;
+  
   int CompressionLevel = ZIP_DEFAULT_COMPRESSION_LEVEL;
 
+  // Get the compression level required
   if (lua_isnumber(L, 3))
   {
-    CompressionLevel = (int)lua_tointeger(L, 3);
+    CompressionLevel = (int) lua_tointeger(L, 3);
   }
 
+  // Check a Lua table was passed.	
   if (lua_istable(L, 2))
   {
-
-    // Push nil onto the stack (not sure why I need this! It was in a sample!).
+    // Push nil onto the stack.
     lua_pushnil(L);
 
-    // Create a Zip file using the default compression level.
+    // Create a zip file using the passed compression level and archive name.
     Zip = zip_open((char *)lua_tostring(L, 1), CompressionLevel, 'w');
 
-    // Loop for each file in the table.
+    // Loop for each file in the passed table.
     while (lua_next(L, 2) != 0)
     {
-      // Check it's a string (a file name) on the stack.
+      // Check it's a string (file name) on the stack.
       if (lua_isstring(L, -1))
       {
-
-        // Create a entry in the Zip for the passed file.
+        // Create a entry in the zip for the passed file.
         zip_entry_open(Zip, (char *)lua_tostring(L, -1));
 
         // Write and compress the file to the archive.
@@ -391,15 +518,10 @@ int lzipFiles(lua_State *L)
 /*
  * When you leave lua without closing the database,
  * the garbage collector will clean up for us.
- *
- * Passed:
- * L       - The lua state
- *
- * Returns
- * int(0)  - Nothing
  */
 static int lzip__gc(lua_State *L)
 {
+	// Close the archive.
 	lzip_close(L);
 	return 0;
 }
@@ -444,12 +566,6 @@ static const luaL_Reg lzip_module[] = {
 
 /*
  * The loader called when our shared library is loaded.
- *
- * Passed:
- * L		The Lua state.
- *
- * Returns:
- * int(1);	our module in Lua's format
  */
 int luaopen_lzip(lua_State *L)
 {
@@ -464,6 +580,7 @@ int luaopen_lzip(lua_State *L)
 	luaL_newlib(L, lzip_module);
 #endif
 
+	// Create the userdata
 	luaL_newmetatable(L, "lzip.db");
 	lua_pushvalue(L, -1);
 	lua_setfield(L, -2, "__index");
