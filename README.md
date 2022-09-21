@@ -1,6 +1,8 @@
 # lzip
 Lua binding for the some of the functions found in the excellent zip library at https://github.com/kuba--/zip 
 
+There's no platform specific code, so you should be able to compile on whatever platform you want.
+
 ## LUA Examples
 
 **Create a zip archive and compress some files into it.**
