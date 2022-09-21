@@ -1,14 +1,17 @@
 # lzip
-Lua binding for https://github.com/kuba--/zip
+Lua binding for the some of the functions found in the excellent zip library at https://github.com/kuba--/zip 
 
-Create a zip archive and compress some files into it.
+## LUA Examples
+
+**Create a zip archive and compress some files into it.**
 
 ```lua
 archive = require("lzip")
+
 archive.compress_files("Example_one.zip", {"File_One.txt", "File_Two.txt"}, ZIP_DEFAULT_COMPRESSION_LEVEL)
 ```
 
-Create a zip archive and add some data to it.
+**Create a zip archive and add some data to it.**
 
 ```lua
 archive = require("lzip")
@@ -19,7 +22,7 @@ zip = archive.open("example_two.zip", ZIP_MAXIMUM_COMPRESSION_LEVEL, "w")
 -- Give the entry a name.
 zip:entry_open("foo-1.txt")
 
--- Write some data to the entry.
+-- Write some data into the entry.
 string = "Some data here....."
 zip:entry_write(string,#string)
 
@@ -41,7 +44,7 @@ zip:entry_close();
 zip:close()
 ```
 
-List the contents of a zip archive.
+**List the contents of a zip archive.**
 
 ```lua
 archive = require("lzip")
@@ -61,7 +64,7 @@ end
 zip:close();
 ```
 
-Extract a file from a archive.
+**Extract a file from a archive.**
 
 ```lua
 archive = require("lzip")
@@ -75,3 +78,26 @@ zip:entry_close();
 zip:close();
 ```
 
+
+
+MIT License
+
+Copyright (c) 2022 Les Farrell
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
